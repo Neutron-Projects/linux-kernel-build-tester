@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/neutron-toolchains/docker-image:arch-neutron
+      image: ghcr.io/neutron-projects/docker-image:arch-neutron
 
     steps:
       - name: Checkout
