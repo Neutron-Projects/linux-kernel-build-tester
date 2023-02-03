@@ -1,0 +1,133 @@
+name: Linux Kernel Builds
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "30 04 * * 6"
+  workflow_dispatch:
+
+jobs:
+  prep_for_build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/neutron-projects/docker-image:arch-neutron
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: AntMan check
+        run: |
+          cd $HOME
+          export TC_PATH="$HOME/neutron/bin"
+          mkdir -p $TC_PATH
+          cd $TC_PATH
+          bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S
+          bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -I
+
+  build_arm64:
+    runs-on: ubuntu-latest
+    needs: prep_for_build
+    container:
+      image: ghcr.io/neutron-projects/docker-image:arch-neutron
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Linux kernel tarball
+        run: |
+          cd $HOME
+          LINUX_VER=$(curl -sL "https://www.kernel.org" | grep -A 1 "latest_link" | tail -n +2 | sed 's|.*">||' | sed 's|</a>||')
+          wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$LINUX_VER.tar.xz"
+          tar -xf linux-$LINUX_VER.tar.xz
+          mv linux-$LINUX_VER linux
+
+      - name: Sync toolchain
+        run: |
+          cd $HOME
+          export TC_PATH="$HOME/neutron"
+          mkdir -p $TC_PATH
+          cd $TC_PATH
+          bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S
+
+      - name: Copy build script
+        run: |
+          mv build.sh $HOME/linux/build.sh
+        
+      - name: build
+        run: |
+          cd $HOME/linux
+          bash build.sh ARM64
+          
+  build_arm:
+    runs-on: ubuntu-latest
+    needs: prep_for_build
+    container:
+      image: ghcr.io/neutron-projects/docker-image:arch-neutron
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Linux kernel tarball
+        run: |
+          cd $HOME
+          LINUX_VER=$(curl -sL "https://www.kernel.org" | grep -A 1 "latest_link" | tail -n +2 | sed 's|.*">||' | sed 's|</a>||')
+          wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$LINUX_VER.tar.xz"
+          tar -xf linux-$LINUX_VER.tar.xz
+          mv linux-$LINUX_VER linux
+
+      - name: Sync toolchain
+        run: |
+          cd $HOME
+          export TC_PATH="$HOME/neutron"
+          mkdir -p $TC_PATH
+          cd $TC_PATH
+          bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S
+
+      - name: Copy build script
+        run: |
+          mv build.sh $HOME/linux/build.sh
+
+      - name: ARM
+        run: |
+          cd $HOME/linux
+          bash build.sh ARM
+
+  build_x86:
+    runs-on: ubuntu-latest
+    needs: prep_for_build
+    container:
+      image: ghcr.io/neutron-projects/docker-image:arch-neutron
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Linux kernel tarball
+        run: |
+          cd $HOME
+          LINUX_VER=$(curl -sL "https://www.kernel.org" | grep -A 1 "latest_link" | tail -n +2 | sed 's|.*">||' | sed 's|</a>||')
+          wget "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-$LINUX_VER.tar.xz"
+          tar -xf linux-$LINUX_VER.tar.xz
+          mv linux-$LINUX_VER linux
+
+      - name: Sync toolchain
+        run: |
+          cd $HOME
+          export TC_PATH="$HOME/neutron"
+          mkdir -p $TC_PATH
+          cd $TC_PATH
+          bash <(curl -s "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman") -S
+
+      - name: Copy build script
+        run: |
+          mv build.sh $HOME/linux/build.sh
+
+      - name: X86_64
+        run: |
+          cd $HOME/linux
+          bash build.sh X86
