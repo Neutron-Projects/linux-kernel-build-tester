@@ -50,7 +50,7 @@ fi
 case "${ARCH_RAW^^}" in
     X86|X86_64|X86-64)
         ARCH_NORM="x86_64"
-        MAKE_ARCH=""
+        MAKE_ARCH="ARCH=x86_64"   # always explicit — prevents leaked ARCH env var
         CROSS_FLAGS=()
         ;;
     ARM64|AARCH64)
@@ -68,6 +68,11 @@ case "${ARCH_RAW^^}" in
         exit 1
         ;;
 esac
+
+# Unset ARCH from the environment — the workflow passes it as ARCH=X86 (uppercase)
+# which make would inherit. We always pass ARCH= explicitly on the command line,
+# so the env value is redundant and harmful.
+unset ARCH
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 

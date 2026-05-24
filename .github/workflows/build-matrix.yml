@@ -215,7 +215,7 @@ jobs:
       - name: "Build ${{ matrix.arch_label }}"
         env:
           TOOLCHAIN_TAG: ${{ needs.setup.outputs.toolchain_tag }}
-          ARCH:          ${{ matrix.arch }}
+          BUILD_ARCH:    ${{ matrix.arch }}
         run: |
           RESULTS="$HOME/results"
           mkdir -p "${RESULTS}"
@@ -227,7 +227,7 @@ jobs:
           cp build.sh "$HOME/linux/build.sh"
 
           set +e
-          bash "$HOME/linux/build.sh" "${ARCH}" "$HOME/linux"
+          bash "$HOME/linux/build.sh" "${BUILD_ARCH}" "$HOME/linux"
           BUILD_EXIT="$?"
           set -e
 
