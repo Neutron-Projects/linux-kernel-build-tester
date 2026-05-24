@@ -82,6 +82,9 @@ concurrency:
   group: build-matrix-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # ─────────────────────────────────────────────────────────────────────────────
 jobs:
 
@@ -371,12 +374,10 @@ jobs:
           if git diff --staged --quiet; then
             echo "Nothing changed — skipping commit"
           else
-            git commit -m "ci: update build matrix results [${TC_TAG}]
-
-Toolchain : ${TC_TAG}
-Clang     : ${CLANG_VER}
-Triggered : ${TRIGGERED_BY}
-Run       : ${RUN_URL}"
+            printf 'ci: update build matrix results [%s]\n\nToolchain : %s\nClang     : %s\nTriggered : %s\nRun       : %s\n' \
+              "${TC_TAG}" "${TC_TAG}" "${CLANG_VER}" "${TRIGGERED_BY}" "${RUN_URL}" \
+              > /tmp/commit_msg.txt
+            git commit -F /tmp/commit_msg.txt
             git push
             echo "Pushed state update"
           fi
