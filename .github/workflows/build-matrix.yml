@@ -1,0 +1,382 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# build-matrix.yml
+#
+# Builds the Linux kernel against every supported kernel series × architecture
+# using the specified (or latest) Neutron Clang toolchain.
+#
+# Triggered by:
+#   1. check-toolchain.yml  (auto, on new toolchain release)
+#   2. workflow_dispatch    (manual / REST API)
+#
+# REST API trigger:
+#   POST /repos/{owner}/{repo}/actions/workflows/build-matrix.yml/dispatches
+#   {
+#     "ref": "main",
+#     "inputs": {
+#       "toolchain_tag": "22052026",
+#       "clang_version": "20.0.0git",
+#       "kernel_filter": "all",
+#       "arch_filter":   "all",
+#       "triggered_by":  "api"
+#     }
+#   }
+#
+# Kernel channels (resolved live from kernel.org/releases.json):
+#   mainline  lts-6.18  lts-6.12  lts-6.6  lts-6.1  lts-5.15
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: "🔨 Build Matrix"
+
+on:
+  workflow_dispatch:
+    inputs:
+      toolchain_tag:
+        description: "Neutron Clang tag (empty = latest)"
+        type: string
+        default: ""
+      clang_version:
+        description: "Clang version (informational)"
+        type: string
+        default: ""
+      llvm_commit:
+        description: "LLVM commit URL (informational)"
+        type: string
+        default: ""
+      kernel_filter:
+        description: "Limit to one kernel channel (all = full matrix)"
+        type: choice
+        options: [all, mainline, lts-6.18, lts-6.12, lts-6.6, lts-6.1, lts-5.15]
+        default: all
+      arch_filter:
+        description: "Limit to one architecture (all = arm64 + arm + x86_64)"
+        type: choice
+        options: [all, arm64, arm, x86_64]
+        default: all
+      triggered_by:
+        description: "Trigger source label (informational)"
+        type: string
+        default: "manual"
+
+  workflow_call:
+    inputs:
+      toolchain_tag:
+        type: string
+        default: ""
+      clang_version:
+        type: string
+        default: ""
+      llvm_commit:
+        type: string
+        default: ""
+      kernel_filter:
+        type: string
+        default: "all"
+      arch_filter:
+        type: string
+        default: "all"
+      triggered_by:
+        type: string
+        default: "toolchain-update"
+
+concurrency:
+  group: build-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ── 1. Resolve toolchain version + build matrix ───────────────────────────
+
+  setup:
+    name: "Resolve versions"
+    runs-on: ubuntu-latest
+
+    outputs:
+      matrix:         ${{ steps.matrix.outputs.matrix }}
+      matrix_count:   ${{ steps.matrix.outputs.matrix_count }}
+      toolchain_tag:  ${{ steps.toolchain.outputs.tag }}
+      clang_version:  ${{ steps.toolchain.outputs.clang_version }}
+      llvm_commit:    ${{ steps.toolchain.outputs.llvm_commit }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve toolchain tag & version
+        id: toolchain
+        env:
+          INPUT_TAG:   ${{ inputs.toolchain_tag }}
+          INPUT_CLANG: ${{ inputs.clang_version }}
+          INPUT_LLVM:  ${{ inputs.llvm_commit }}
+          CAT_RAW:     "https://raw.githubusercontent.com/Neutron-Toolchains/clang-build-catalogue/main"
+        run: |
+          TAG="${INPUT_TAG}"
+          if [ -z "${TAG}" ]; then
+            TAG=$(curl -sf "${CAT_RAW}/latest.txt" \
+              | grep -A1 '\[tag\]' | tail -1 | tr -d '[:space:]')
+            echo "Resolved latest tag: ${TAG}"
+          else
+            echo "Using provided tag: ${TAG}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          CLANG_VER="${INPUT_CLANG}"
+          LLVM_CMT="${INPUT_LLVM}"
+
+          if [ -z "${CLANG_VER}" ]; then
+            INFO=$(curl -sf "${CAT_RAW}/${TAG}-info.txt" 2>/dev/null || true)
+            CLANG_VER=$(printf '%s' "${INFO}" | awk '/\[clang-ver\]/{getline; print; exit}' | tr -d '[:space:]')
+            LLVM_CMT=$(printf '%s'  "${INFO}" | awk '/\[llvm-commit\]/{getline; print; exit}' | tr -d '[:space:]')
+            GLIBC=$(printf '%s'     "${INFO}" | awk '/\[host-glibc\]/{getline; print; exit}'  | tr -d '[:space:]')
+            TCSIZE=$(printf '%s'    "${INFO}" | awk '/\[size\]/{getline; print; exit}'         | tr -d '[:space:]')
+            echo "─────────────────────────────────────"
+            echo "  Tag:         ${TAG}"
+            echo "  Clang:       ${CLANG_VER}"
+            echo "  LLVM commit: ${LLVM_CMT}"
+            echo "  glibc:       ${GLIBC}"
+            echo "  Size:        ${TCSIZE}"
+            echo "─────────────────────────────────────"
+          fi
+
+          echo "clang_version=${CLANG_VER}" >> "$GITHUB_OUTPUT"
+          echo "llvm_commit=${LLVM_CMT}"     >> "$GITHUB_OUTPUT"
+
+      - name: Resolve kernel versions & build matrix
+        id: matrix
+        env:
+          KERNEL_FILTER: ${{ inputs.kernel_filter || 'all' }}
+          ARCH_FILTER:   ${{ inputs.arch_filter   || 'all' }}
+        run: |
+          python3 scripts/resolve-matrix.py \
+            --kernel-filter "${KERNEL_FILTER}" \
+            --arch-filter   "${ARCH_FILTER}"   \
+            --output-env    "${GITHUB_OUTPUT}"
+
+  # ── 2. Build (fan-out matrix) ─────────────────────────────────────────────
+
+  build:
+    name: "${{ matrix.job_name }}"
+    needs: setup
+    runs-on: ubuntu-latest
+    if: needs.setup.outputs.matrix_count != '0'
+
+    container:
+      image: ghcr.io/neutron-projects/docker-image:arch-neutron
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Fetch kernel tarball ─────────────────────────────────────────────
+
+      - name: "Fetch kernel ${{ matrix.kernel_version }}"
+        env:
+          VER: ${{ matrix.kernel_version }}
+        run: |
+          cd "$HOME"
+          MAJOR="${VER%%.*}"
+          URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${VER}.tar.xz"
+
+          echo "Downloading ${URL}"
+          curl -fL --retry 3 --retry-delay 10 --progress-bar \
+               -o "linux-${VER}.tar.xz" "${URL}"
+
+          echo "Extracting …"
+          tar -xf "linux-${VER}.tar.xz"
+          mv "linux-${VER}" linux
+          printf '%s' "${VER}"                         > linux/.kernel-version
+          printf '%s' "${{ matrix.kernel_channel }}"  > linux/.kernel-channel
+
+      # ── Sync Neutron Clang ─────────────────────────────────────────────────
+
+      - name: "Sync Neutron Clang ${{ needs.setup.outputs.toolchain_tag }}"
+        env:
+          TC_TAG:     ${{ needs.setup.outputs.toolchain_tag }}
+          ANTMAN_URL: "https://raw.githubusercontent.com/Neutron-Toolchains/antman/main/antman"
+        run: |
+          mkdir -p "$HOME/neutron"
+          cd "$HOME/neutron"
+          if [ "${TC_TAG}" = "latest" ] || [ -z "${TC_TAG}" ]; then
+            bash <(curl -sf "${ANTMAN_URL}") -S
+          else
+            bash <(curl -sf "${ANTMAN_URL}") -S="${TC_TAG}"
+          fi
+          bash <(curl -sf "${ANTMAN_URL}") -I
+
+      # ── Build ─────────────────────────────────────────────────────────────
+
+      - name: "Build ${{ matrix.arch_label }}"
+        env:
+          TOOLCHAIN_TAG: ${{ needs.setup.outputs.toolchain_tag }}
+          ARCH:          ${{ matrix.arch }}
+        run: |
+          RESULTS="$HOME/results"
+          mkdir -p "${RESULTS}"
+
+          export TC_ROOT="$HOME/neutron"
+          export BUILD_LOG="${RESULTS}/build.log"
+          export RESULT_JSON="${RESULTS}/result.json"
+
+          cp build.sh "$HOME/linux/build.sh"
+
+          set +e
+          bash "$HOME/linux/build.sh" "${ARCH}" "$HOME/linux"
+          BUILD_EXIT="$?"
+          set -e
+
+          if [ "${BUILD_EXIT}" -ne 0 ]; then
+            echo "::error::Build FAILED: ${{ matrix.job_name }}"
+          else
+            echo "::notice::Build PASSED: ${{ matrix.job_name }}"
+          fi
+          exit "${BUILD_EXIT}"
+
+      - name: Inject run context into result JSON
+        if: always()
+        env:
+          RESULT_JSON:     "${{ runner.temp }}/results/result.json"
+          KERNEL_CHANNEL:  ${{ matrix.kernel_channel }}
+          KERNEL_SERIES:   ${{ matrix.kernel_series }}
+          KERNEL_LABEL:    ${{ matrix.kernel_label }}
+          RUN_URL:         "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          RESULT_JSON="$HOME/results/result.json"
+          if [ -f "${RESULT_JSON}" ]; then
+            python3 scripts/inject-result-context.py \
+              "${RESULT_JSON}"       \
+              "${KERNEL_CHANNEL}"    \
+              "${KERNEL_SERIES}"     \
+              "${KERNEL_LABEL}"      \
+              "${RUN_URL}"
+          else
+            echo "::warning::No result.json found at ${RESULT_JSON}"
+          fi
+
+      - name: Step summary
+        if: always()
+        env:
+          RESULT_JSON:    "${{ runner.temp }}/placeholder"
+          KERNEL_LABEL:   ${{ matrix.kernel_label }}
+          KERNEL_VERSION: ${{ matrix.kernel_version }}
+          ARCH_LABEL:     ${{ matrix.arch_label }}
+          TC_TAG:         ${{ needs.setup.outputs.toolchain_tag }}
+          CLANG_VER:      ${{ needs.setup.outputs.clang_version }}
+          JOB_NAME:       ${{ matrix.job_name }}
+        run: |
+          RJ="$HOME/results/result.json"
+          if [ -f "${RJ}" ]; then
+            STATUS=$(python3 -c "import json; print(json.load(open('${RJ}')).get('status','unknown'))")
+            DUR=$(python3    -c "import json; print(json.load(open('${RJ}')).get('duration_human','?'))")
+            WRN=$(python3    -c "import json; print(json.load(open('${RJ}')).get('warnings',0))")
+            ERR=$(python3    -c "import json; print(json.load(open('${RJ}')).get('errors',0))")
+          else
+            STATUS="unknown"; DUR="?"; WRN="?"; ERR="?"
+          fi
+
+          if [ "${STATUS}" = "pass" ]; then ICON="✅"; else ICON="❌"; fi
+
+          {
+            echo "## ${ICON} ${JOB_NAME}"
+            echo "| Field | Value |"
+            echo "|:------|:------|"
+            echo "| **Kernel** | ${KERNEL_LABEL} \`${KERNEL_VERSION}\` |"
+            echo "| **Arch** | \`${ARCH_LABEL}\` |"
+            echo "| **Toolchain** | \`${TC_TAG}\` |"
+            echo "| **Clang** | \`${CLANG_VER}\` |"
+            echo "| **Duration** | ${DUR} |"
+            echo "| **Warnings** | ${WRN} |"
+            echo "| **Errors** | ${ERR} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Upload artifacts ─────────────────────────────────────────────────
+
+      - name: Upload result JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "result-${{ matrix.kernel_channel }}-${{ matrix.arch_label }}"
+          path: ~/results/result.json
+          retention-days: 90
+
+      - name: Upload build log (failure only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: "buildlog-${{ matrix.kernel_channel }}-${{ matrix.arch_label }}"
+          path: ~/results/build.log
+          retention-days: 14
+
+  # ── 3. Aggregate + update README + commit ─────────────────────────────────
+
+  update-status:
+    name: "Update README & state"
+    needs: [setup, build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Download all result artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "result-*"
+          path: /tmp/results
+          merge-multiple: false
+
+      - name: Show downloaded results
+        run: find /tmp/results -name "result.json" | sort
+
+      - name: Run update-status.py
+        env:
+          TC_TAG:    ${{ needs.setup.outputs.toolchain_tag }}
+          CLANG_VER: ${{ needs.setup.outputs.clang_version }}
+          LLVM_CMT:  ${{ needs.setup.outputs.llvm_commit }}
+          RUN_ID:    ${{ github.run_id }}
+          RUN_URL:   "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          python3 scripts/update-status.py \
+            --results-dir   "/tmp/results"  \
+            --toolchain-tag "${TC_TAG}"     \
+            --clang-version "${CLANG_VER}"  \
+            --llvm-commit   "${LLVM_CMT}"   \
+            --run-id        "${RUN_ID}"     \
+            --run-url       "${RUN_URL}"
+
+      - name: Print summary table
+        run: python3 scripts/print-summary.py
+
+      - name: Commit and push
+        env:
+          TC_TAG:       ${{ needs.setup.outputs.toolchain_tag }}
+          CLANG_VER:    ${{ needs.setup.outputs.clang_version }}
+          TRIGGERED_BY: ${{ inputs.triggered_by || 'toolchain-update' }}
+          RUN_URL:      "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add state/ README.md
+          if git diff --staged --quiet; then
+            echo "Nothing changed — skipping commit"
+          else
+            git commit -m "ci: update build matrix results [${TC_TAG}]
+
+Toolchain : ${TC_TAG}
+Clang     : ${CLANG_VER}
+Triggered : ${TRIGGERED_BY}
+Run       : ${RUN_URL}"
+            git push
+            echo "Pushed state update"
+          fi
