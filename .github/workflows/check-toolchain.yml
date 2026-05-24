@@ -1,0 +1,167 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# check-toolchain.yml
+#
+# Polls the Neutron Toolchains clang-build-catalogue every 6 hours.
+# When a new toolchain tag is detected (or a manual force is requested),
+# dispatches the build-matrix workflow.
+#
+# Also exposes a workflow_dispatch input so humans / external systems can
+# trigger a forced check + rebuild at any time.
+#
+# API trigger (GitHub REST):
+#   POST /repos/{owner}/{repo}/actions/workflows/check-toolchain.yml/dispatches
+#   {
+#     "ref": "main",
+#     "inputs": {
+#       "force_build": "true",
+#       "toolchain_tag": "22052026"   // optional; empty = latest
+#     }
+#   }
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: "🔍 Check for New Toolchain"
+
+on:
+  schedule:
+    # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: "0 0,6,12,18 * * *"
+
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Force a build even if toolchain hasn't changed"
+        type: boolean
+        default: false
+      toolchain_tag:
+        description: "Specific toolchain tag to check (empty = latest)"
+        type: string
+        default: ""
+
+jobs:
+  # ── Check ──────────────────────────────────────────────────────────────────
+
+  check:
+    name: "Check catalogue"
+    runs-on: ubuntu-latest
+
+    outputs:
+      new_toolchain:  ${{ steps.compare.outputs.new_toolchain }}
+      toolchain_tag:  ${{ steps.fetch.outputs.tag }}
+      clang_version:  ${{ steps.fetch.outputs.clang_version }}
+      llvm_commit:    ${{ steps.fetch.outputs.llvm_commit }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Fetch the latest (or specified) toolchain info ──────────────────────
+
+      - name: Fetch toolchain info from catalogue
+        id: fetch
+        run: |
+          CATALOGUE="https://raw.githubusercontent.com/Neutron-Toolchains/clang-build-catalogue/main"
+
+          OVERRIDE_TAG="${{ inputs.toolchain_tag }}"
+
+          if [[ -n "${OVERRIDE_TAG}" ]]; then
+            TAG="${OVERRIDE_TAG}"
+            echo "Using override tag: ${TAG}"
+          else
+            echo "Fetching latest.txt…"
+            LATEST_RAW=$(curl -sf "${CATALOGUE}/latest.txt")
+            TAG=$(echo "${LATEST_RAW}" | grep -A1 '\[tag\]' | tail -1 | tr -d '[:space:]')
+            echo "Latest catalogue tag: ${TAG}"
+          fi
+
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+          # ── Parse info file ─────────────────────────────────────────────────
+          INFO_URL="${CATALOGUE}/${TAG}-info.txt"
+          echo "Fetching ${INFO_URL}…"
+          INFO=$(curl -sf "${INFO_URL}" 2>/dev/null || true)
+
+          if [[ -z "${INFO}" ]]; then
+            echo "::warning::Could not fetch info for tag ${TAG}"
+            echo "clang_version=unknown" >> "$GITHUB_OUTPUT"
+            echo "llvm_commit="          >> "$GITHUB_OUTPUT"
+          else
+            CLANG_VER=$(echo "${INFO}" | awk '/\[clang-ver\]/{getline; print}' | tr -d '[:space:]')
+            LLVM_CMT=$(echo "${INFO}"  | awk '/\[llvm-commit\]/{getline; print}' | tr -d '[:space:]')
+            HOST_GLIBC=$(echo "${INFO}" | awk '/\[host-glibc\]/{getline; print}' | tr -d '[:space:]')
+            TC_SIZE=$(echo "${INFO}" | awk '/\[size\]/{getline; print}' | tr -d '[:space:]')
+
+            echo "clang_version=${CLANG_VER}" >> "$GITHUB_OUTPUT"
+            echo "llvm_commit=${LLVM_CMT}"     >> "$GITHUB_OUTPUT"
+
+            echo "─────────────────────────────────"
+            echo "  Tag:         ${TAG}"
+            echo "  Clang:       ${CLANG_VER}"
+            echo "  LLVM commit: ${LLVM_CMT}"
+            echo "  glibc:       ${HOST_GLIBC}"
+            echo "  Size:        ${TC_SIZE}"
+            echo "─────────────────────────────────"
+          fi
+
+      # ── Compare with last seen toolchain ───────────────────────────────────
+
+      - name: Compare with stored version
+        id: compare
+        run: |
+          TAG="${{ steps.fetch.outputs.tag }}"
+          FORCE="${{ inputs.force_build }}"
+
+          LAST_SEEN=""
+          if [[ -f "state/last-toolchain.txt" ]]; then
+            LAST_SEEN=$(cat state/last-toolchain.txt | tr -d '[:space:]')
+          fi
+
+          echo "Current tag : ${TAG}"
+          echo "Last tested : ${LAST_SEEN:-<none>}"
+
+          if [[ "${TAG}" != "${LAST_SEEN}" ]]; then
+            echo "new_toolchain=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::🆕 New toolchain detected: ${TAG} (was: ${LAST_SEEN:-none})"
+          elif [[ "${FORCE}" == "true" ]]; then
+            echo "new_toolchain=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::🔄 Force build requested for: ${TAG}"
+          else
+            echo "new_toolchain=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::✓ Toolchain unchanged: ${TAG}"
+          fi
+
+  # ── Trigger build matrix ───────────────────────────────────────────────────
+
+  trigger:
+    name: "Dispatch build matrix"
+    needs: check
+    runs-on: ubuntu-latest
+    if: needs.check.outputs.new_toolchain == 'true'
+
+    steps:
+      - name: Dispatch build-matrix.yml
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag          = '${{ needs.check.outputs.toolchain_tag }}';
+            const clangVersion = '${{ needs.check.outputs.clang_version }}';
+            const llvmCommit   = '${{ needs.check.outputs.llvm_commit }}';
+
+            console.log(`Dispatching build matrix for toolchain ${tag}…`);
+
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              workflow_id: 'build-matrix.yml',
+              ref:   'main',
+              inputs: {
+                toolchain_tag:  tag,
+                clang_version:  clangVersion,
+                llvm_commit:    llvmCommit,
+                triggered_by:   'toolchain-update',
+                kernel_filter:  'all',
+                arch_filter:    'all',
+              }
+            });
+
+            console.log('Dispatched ✓');
