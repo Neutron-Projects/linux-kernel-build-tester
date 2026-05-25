@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "style": "flat-square",
-  "namedLogo": "linux",
   "label": "neutron clang",
-  "message": "pending",
-  "color": "informational"
+  "message": "23.0.0git",
+  "color": "informational",
+  "style": "flat-square",
+  "namedLogo": "linux"
 }
