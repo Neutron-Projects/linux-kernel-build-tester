@@ -203,6 +203,48 @@ def resolve_version_for_channel(channel_or_version: str, releases: dict | None =
     raise ValueError(f"Could not resolve kernel channel '{channel_or_version}'")
 
 
+def resolve_release_entry(channel_or_version: str, releases: dict | None = None) -> dict:
+    if releases is None:
+        releases = fetch_releases()
+
+    channel = normalize_channel(channel_or_version)
+    version = resolve_version_for_channel(channel_or_version, releases)
+
+    for item in releases.get("releases", []):
+        if item.get("version") == version:
+            return item
+
+    if re.fullmatch(r"\d+\.\d+(?:\.\d+)?(?:-rc\d+)?", version):
+        if "-rc" in version:
+            return {
+                "moniker": "mainline",
+                "version": version,
+                "source": f"https://git.kernel.org/torvalds/t/linux-{version}.tar.gz",
+            }
+
+        major = version.split(".", 1)[0]
+        return {
+            "moniker": "stable",
+            "version": version,
+            "source": f"https://cdn.kernel.org/pub/linux/kernel/v{major}.x/linux-{version}.tar.xz",
+        }
+
+    raise ValueError(f"Could not resolve release entry for '{channel_or_version}'")
+
+
+def resolve_download_url(channel_or_version: str, releases: dict | None = None) -> str:
+    return resolve_release_entry(channel_or_version, releases).get("source", "")
+
+
+def resolve_download_info(channel_or_version: str, releases: dict | None = None) -> dict[str, str]:
+    release = resolve_release_entry(channel_or_version, releases)
+    return {
+        "channel": normalize_channel(channel_or_version),
+        "version": release.get("version", ""),
+        "source": release.get("source", ""),
+    }
+
+
 def normalize_channel(channel: str) -> str:
     key = channel.strip().lower()
     return CHANNEL_ALIASES.get(key, key)
@@ -260,11 +302,9 @@ def channel_sort_key(channel: str) -> tuple[int, ...]:
 
 if __name__ == "__main__":
     import argparse
-    import os
-    import sys
 
     parser = argparse.ArgumentParser(description="Resolve kernel.org releases.")
-    parser.add_argument("command", choices=["matrix", "resolve-version", "tracks"])
+    parser.add_argument("command", choices=["matrix", "resolve-version", "resolve-url", "download-info", "tracks"])
     parser.add_argument("value", nargs="?")
     parser.add_argument("--kernel-filter", default="all")
     parser.add_argument("--arch-filter", default="all")
@@ -274,6 +314,14 @@ if __name__ == "__main__":
         if not args.value:
             raise SystemExit("resolve-version requires a channel or version value")
         print(resolve_version_for_channel(args.value))
+    elif args.command == "resolve-url":
+        if not args.value:
+            raise SystemExit("resolve-url requires a channel or version value")
+        print(resolve_download_url(args.value))
+    elif args.command == "download-info":
+        if not args.value:
+            raise SystemExit("download-info requires a channel or version value")
+        print(json.dumps(resolve_download_info(args.value), indent=2))
     elif args.command == "tracks":
         data = resolve_tracks(fetch_releases())
         print(json.dumps(data, indent=2))

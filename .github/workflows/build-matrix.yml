@@ -176,22 +176,8 @@ jobs:
       # ── Fetch kernel tarball ─────────────────────────────────────────────
 
       - name: "Fetch kernel ${{ matrix.kernel_version }}"
-        env:
-          VER: ${{ matrix.kernel_version }}
         run: |
-          cd "$HOME"
-          MAJOR="${VER%%.*}"
-          URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${VER}.tar.xz"
-
-          echo "Downloading ${URL}"
-          curl -fL --retry 3 --retry-delay 10 --progress-bar \
-               -o "linux-${VER}.tar.xz" "${URL}"
-
-          echo "Extracting …"
-          tar -xf "linux-${VER}.tar.xz"
-          mv "linux-${VER}" linux
-          printf '%s' "${VER}"                         > linux/.kernel-version
-          printf '%s' "${{ matrix.kernel_channel }}"  > linux/.kernel-channel
+          bash scripts/fetch-kernel.sh "${{ matrix.kernel_channel }}" "$HOME"
 
       # ── Sync Neutron Clang ─────────────────────────────────────────────────
 
