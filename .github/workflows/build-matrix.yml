@@ -318,7 +318,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download all result artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: "result-*"
           path: /tmp/results
