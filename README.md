@@ -30,17 +30,17 @@ on every new toolchain release — automatically.
 
 <!-- BUILD_TABLE_START -->
 
-> **Neutron Clang:** [`23.0.0git`](https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/tag/26052026)&emsp;**Tag:** `26052026`
-> **Last run:** [26 May 2026 15:24 UTC](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561)
+> **Neutron Clang:** [`23.0.0git`](https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/tag/03062026)&emsp;**Tag:** `03062026`
+> **Last run:** [03 Jun 2026 03:27 UTC](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506)
 
 | Kernel | Version | `arm64` | `arm` | `x86_64` |
 |:-------|:--------|:-------:|:-----:|:--------:|
-| **Mainline** | `7.0.10` | [✅ `37m51s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `18m24s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `8m52s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) |
-| **6.18 LTS** | `6.18.33` | [✅ `31m23s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `17m09s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [❌](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) |
-| **6.12 LTS** | `6.12.91` | [✅ `25m36s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `11m08s` ⚠361](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `8m05s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) |
-| **6.6 LTS** | `6.6.141` | [✅ `24m00s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `13m42s` ⚠355](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `7m58s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) |
-| **6.1 LTS** | `6.1.174` | [✅ `23m16s` ⚠4](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `14m03s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `7m19s` ⚠3](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) |
-| **5.15 LTS** | `5.15.208` | [✅ `17m25s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `13m27s` ⚠363](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) | [✅ `6m11s` ⚠3](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26455468561) |
+| **Mainline** | `7.0.11` | [✅ `36m34s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `19m23s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `9m29s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.18 LTS** | `6.18.34` | [✅ `33m25s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `18m04s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [❌](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.12 LTS** | `6.12.92` | [✅ `26m49s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m14s` ⚠358](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `8m33s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.6 LTS** | `6.6.142` | [✅ `21m21s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m54s` ⚠356](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `7m47s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.1 LTS** | `6.1.175` | [✅ `22m13s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m47s` ⚠364](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `7m37s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **5.15 LTS** | `5.15.209` | [✅ `18m39s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `13m16s` ⚠360](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `6m07s` ⚠3](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
 
 <sub>✅ pass · ❌ fail · ⬜ not run · ⚠N = N compiler warnings · time shown for passing builds</sub>
 
