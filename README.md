@@ -1,5 +1,421 @@
 <div align="center">
 
+# Linux Kernel Build Tester
+
+Automated Linux kernel builds for [Neutron Clang](https://github.com/Neutron-Toolchains/clang-build-catalogue).
+The build matrix is resolved at runtime from kernel.org, so the repo always tracks the current mainline RC, the current stable release, and every active longterm series.
+
+<p>
+  <a href="https://github.com/Neutron-Toolchains/clang-build-catalogue"><img alt="Neutron Clang" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/toolchain.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="Kernel builds" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/all.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="Mainline" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/mainline.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="Stable" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/stable.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.18 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.18.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.12 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.12.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.6 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.6.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.1 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.1.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="5.15 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-5.15.json&style=flat-square" /></a>
+</p>
+
+---
+
+## Overview
+
+This repository runs a fan-out Linux kernel build matrix across `arm64`, `arm`, and `x86_64` using the current Neutron Clang toolchain.
+Kernel versions are resolved from kernel.org at runtime, so the active mainline, stable, and longterm series do not need manual pinning.
+
+<!-- BUILD_TABLE_START -->
+
+> **Neutron Clang:** [`23.0.0git`](https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/tag/03062026)&emsp;**Tag:** `03062026`
+> **Last run:** [03 Jun 2026 03:27 UTC](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506)
+
+| Kernel | Version | `arm64` | `arm` | `x86_64` |
+|:-------|:--------|:-------:|:-----:|:--------:|
+| **Mainline** | `7.0.11` | [✅ `36m34s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `19m23s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `9m29s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.18 LTS** | `6.18.34` | [✅ `33m25s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `18m04s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [❌](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.12 LTS** | `6.12.92` | [✅ `26m49s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m14s` ⚠358](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `8m33s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.6 LTS** | `6.6.142` | [✅ `21m21s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m54s` ⚠356](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `7m47s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.1 LTS** | `6.1.175` | [✅ `22m13s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m47s` ⚠364](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `7m37s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **5.15 LTS** | `5.15.209` | [✅ `18m39s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `13m16s` ⚠360](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `6m07s` ⚠3](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+
+<sub>✅ pass · ❌ fail · ⬜ not run · ⚠N = N compiler warnings · time shown for passing builds</sub>
+
+<!-- BUILD_TABLE_END -->
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    A[Neutron Clang release] --> B[check-toolchain.yml]
+    B --> C[build-matrix.yml setup]
+    C --> D[Resolve kernel.org releases.json]
+    D --> E[Build matrix includes mainline, stable, and active LTS tracks]
+    E --> F[Parallel builds on arm64 / arm / x86_64]
+    F --> G[update-status.py refreshes state, badges, and README]
+```
+
+Mainline rows also capture the current upstream HEAD commit so a failed snapshot can be reproduced more easily later.
+
+### Track Resolution
+
+| Track | Source | Notes |
+|:------|:-------|:------|
+| `mainline` | kernel.org `moniker: mainline` | Current rc snapshot; result.json stores the current HEAD commit |
+| `stable` | kernel.org `moniker: stable` | Current stable release |
+| `lts-*` | kernel.org `moniker: longterm` | Active longterm series are discovered dynamically |
+
+---
+
+## Triggering a Build
+
+### Automatic
+
+`check-toolchain.yml` polls the [clang-build-catalogue](https://github.com/Neutron-Toolchains/clang-build-catalogue) every 6 hours and dispatches `build-matrix.yml` when a new toolchain tag appears.
+
+### Manual
+
+Use **Actions → 🔨 Build Matrix → Run workflow** and fill in the inputs:
+
+| Input | Description | Default |
+|:------|:------------|:--------|
+| `toolchain_tag` | Specific Neutron Clang tag, or empty for the latest catalogue entry | latest |
+| `clang_version` | Clang version string for display only | — |
+| `llvm_commit` | LLVM commit URL for display only | — |
+| `kernel_filter` | Limit to one kernel channel, series, or label | `all` |
+| `arch_filter` | Limit to one architecture | `all` |
+| `triggered_by` | Label used in the commit message | `manual` |
+
+### REST API
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <GITHUB_TOKEN>" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml/dispatches \
+  -d '{
+    "ref": "main",
+    "inputs": {
+      "toolchain_tag": "22052026",
+      "kernel_filter": "all",
+      "arch_filter": "all",
+      "triggered_by": "api"
+    }
+  }'
+```
+
+To force a catalogue refresh:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <GITHUB_TOKEN>" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/Neutron-Projects/linux-kernel-build-tester/actions/workflows/check-toolchain.yml/dispatches \
+  -d '{
+    "ref": "main",
+    "inputs": {
+      "force_build": "true"
+    }
+  }'
+```
+
+---
+
+## Build Metrics
+
+Each build job emits a `result.json` artifact with:
+
+```jsonc
+{
+  "status": "pass",
+  "arch": "arm64",
+  "kernel_version": "7.1-rc6",
+  "kernel_channel": "mainline",
+  "kernel_label": "Mainline",
+  "kernel_head_commit": "ba3e43a9e601636f5edb54e259a74f96ca3b8fd8",
+  "clang_version": "Neutron Clang 23.0.0git …",
+  "toolchain_tag": "22052026",
+  "duration_seconds": 342,
+  "duration_human": "5m42s",
+  "warnings": 4,
+  "errors": 0,
+  "timestamp_start": "2026-05-22T04:00:01Z",
+  "timestamp_end": "2026-05-22T04:05:43Z",
+  "run_url": "https://github.com/…/actions/runs/…",
+  "exit_code": 0
+}
+```
+
+Artifacts are retained for 90 days. Failure logs are kept for 14 days.
+
+---
+
+## Repository Layout
+
+```
+.
+├── build.sh
+├── scripts/
+│   ├── fetch-kernel.sh
+│   ├── kernel_releases.py
+│   ├── resolve-matrix.py
+│   ├── inject-result-context.py
+│   ├── update-status.py
+│   └── print-summary.py
+├── state/
+│   ├── build-status.json
+│   ├── last-toolchain.txt
+│   └── badges/
+│       ├── all.json
+│       ├── toolchain.json
+│       ├── mainline.json
+│       ├── stable.json
+│       ├── lts-6.18.json
+│       ├── lts-6.12.json
+│       ├── lts-6.6.json
+│       ├── lts-6.1.json
+│       └── lts-5.15.json
+└── .github/workflows/
+    ├── check-toolchain.yml
+    └── build-matrix.yml
+```
+
+---
+
+## Badge Integration
+
+```markdown
+![mainline](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/mainline.json&style=flat-square)
+![stable](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/stable.json&style=flat-square)
+![6.18 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.18.json&style=flat-square)
+![6.12 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.12.json&style=flat-square)
+![6.6 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.6.json&style=flat-square)
+![6.1 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.1.json&style=flat-square)
+![5.15 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-5.15.json&style=flat-square)
+```
+
+---
+
+<div align="center">
+<sub>
+Builds run inside <a href="https://github.com/Neutron-Projects/docker-image"><code>ghcr.io/neutron-projects/docker-image:arch-neutron</code></a> ·
+Toolchain managed by <a href="https://github.com/Neutron-Toolchains/antman">antman</a> ·
+Kernel versions from <a href="https://www.kernel.org/releases.json">kernel.org/releases.json</a>
+</sub>
+</div>
+<div align="center">
+
+# Linux Kernel Build Tester
+
+Automated Linux kernel builds for [Neutron Clang](https://github.com/Neutron-Toolchains/clang-build-catalogue).
+The build matrix is resolved at runtime from kernel.org, so the repo always tracks the current mainline RC, the current stable release, and every active longterm series.
+
+<p>
+  <a href="https://github.com/Neutron-Toolchains/clang-build-catalogue"><img alt="Neutron Clang" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/toolchain.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="Kernel builds" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/all.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="Mainline" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/mainline.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="Stable" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/stable.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.18 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.18.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.12 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.12.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.6 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.6.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="6.1 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.1.json&style=flat-square" /></a>
+  <a href="https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml"><img alt="5.15 LTS" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-5.15.json&style=flat-square" /></a>
+</p>
+
+---
+
+## Overview
+
+This repository runs a fan-out Linux kernel build matrix across `arm64`, `arm`, and `x86_64` using the current Neutron Clang toolchain.
+Kernel versions are resolved from kernel.org at runtime, so the active mainline, stable, and longterm series do not need manual pinning.
+
+The build table below is rewritten by CI after each successful run and backed by `state/build-status.json`.
+
+<!-- BUILD_TABLE_START -->
+
+> **Neutron Clang:** [`23.0.0git`](https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/tag/03062026)&emsp;**Tag:** `03062026`
+> **Last run:** [03 Jun 2026 03:27 UTC](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506)
+
+| Kernel | Version | `arm64` | `arm` | `x86_64` |
+|:-------|:--------|:-------:|:-----:|:--------:|
+| **Mainline** | `7.0.11` | [✅ `36m34s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `19m23s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `9m29s`](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.18 LTS** | `6.18.34` | [✅ `33m25s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `18m04s` ⚠366](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [❌](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.12 LTS** | `6.12.92` | [✅ `26m49s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m14s` ⚠358](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `8m33s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.6 LTS** | `6.6.142` | [✅ `21m21s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m54s` ⚠356](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `7m47s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **6.1 LTS** | `6.1.175` | [✅ `22m13s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `14m47s` ⚠364](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `7m37s` ⚠2](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+| **5.15 LTS** | `5.15.209` | [✅ `18m39s` ⚠1](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `13m16s` ⚠360](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) | [✅ `6m07s` ⚠3](https://github.com/Neutron-Projects/linux-kernel-build-tester/actions/runs/26860686506) |
+
+<sub>✅ pass · ❌ fail · ⬜ not run · ⚠N = N compiler warnings · time shown for passing builds</sub>
+
+<!-- BUILD_TABLE_END -->
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    A[Neutron Clang release] --> B[check-toolchain.yml]
+    B --> C[build-matrix.yml setup]
+    C --> D[Resolve kernel.org releases.json]
+    D --> E[Build matrix includes mainline, stable, and active LTS tracks]
+    E --> F[Parallel builds on arm64 / arm / x86_64]
+    F --> G[update-status.py refreshes state, badges, and README]
+```
+
+The matrix resolver looks at kernel.org live data on every run. Mainline rows also capture the current upstream HEAD commit so a failed snapshot can be reproduced more easily later.
+
+### Track Resolution
+
+| Track | Source | Notes |
+|:------|:-------|:------|
+| `mainline` | kernel.org `moniker: mainline` | Current rc snapshot; result.json stores the current HEAD commit |
+| `stable` | kernel.org `moniker: stable` | Tracks the current stable release, which is also the latest stable release |
+| `lts-*` | kernel.org `moniker: longterm` | Active longterm series are discovered dynamically |
+
+---
+
+## Triggering a Build
+
+### Automatic
+
+`check-toolchain.yml` polls the [clang-build-catalogue](https://github.com/Neutron-Toolchains/clang-build-catalogue) every 6 hours. When a new toolchain tag is detected it dispatches `build-matrix.yml` with the latest kernel matrix.
+
+### Manual
+
+Use **Actions → 🔨 Build Matrix → Run workflow** and fill in the inputs:
+
+| Input | Description | Default |
+|:------|:------------|:--------|
+| `toolchain_tag` | Specific Neutron Clang tag, or empty for the latest catalogue entry | latest |
+| `clang_version` | Clang version string for display only | — |
+| `llvm_commit` | LLVM commit URL for display only | — |
+| `kernel_filter` | Limit to one kernel channel, series, or label | `all` |
+| `arch_filter` | Limit to one architecture | `all` |
+| `triggered_by` | Label used in the commit message | `manual` |
+
+### REST API
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <GITHUB_TOKEN>" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/Neutron-Projects/linux-kernel-build-tester/actions/workflows/build-matrix.yml/dispatches \
+  -d '{
+    "ref": "main",
+    "inputs": {
+      "toolchain_tag": "22052026",
+      "kernel_filter": "all",
+      "arch_filter": "all",
+      "triggered_by": "api"
+    }
+  }'
+```
+
+To force a catalogue refresh:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer <GITHUB_TOKEN>" \
+  -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/Neutron-Projects/linux-kernel-build-tester/actions/workflows/check-toolchain.yml/dispatches \
+  -d '{
+    "ref": "main",
+    "inputs": {
+      "force_build": "true"
+    }
+  }'
+```
+
+---
+
+## Build Metrics
+
+Each build job emits a `result.json` artifact with:
+
+```jsonc
+{
+  "status": "pass",
+  "arch": "arm64",
+  "kernel_version": "7.1-rc6",
+  "kernel_channel": "mainline",
+  "kernel_label": "Mainline",
+  "kernel_head_commit": "ba3e43a9e601636f5edb54e259a74f96ca3b8fd8",
+  "clang_version": "Neutron Clang 23.0.0git …",
+  "toolchain_tag": "22052026",
+  "duration_seconds": 342,
+  "duration_human": "5m42s",
+  "warnings": 4,
+  "errors": 0,
+  "timestamp_start": "2026-05-22T04:00:01Z",
+  "timestamp_end": "2026-05-22T04:05:43Z",
+  "run_url": "https://github.com/…/actions/runs/…",
+  "exit_code": 0
+}
+```
+
+Artifacts are retained for 90 days. Failure logs are kept for 14 days.
+
+---
+
+## Repository Layout
+
+```
+.
+├── build.sh                         # Build entrypoint — called per arch
+├── scripts/
+│   ├── fetch-kernel.sh              # Kernel tarball fetcher using kernel.org data
+│   ├── kernel_releases.py           # Shared kernel.org release resolver and matrix helper
+│   ├── resolve-matrix.py            # Resolves live kernel tracks → matrix JSON
+│   ├── inject-result-context.py     # Adds channel/label metadata to result.json
+│   ├── update-status.py             # Aggregates results → state + README
+│   └── print-summary.py             # Prints the build table to stdout + step summary
+├── state/
+│   ├── build-status.json            # Live build state (committed after each run)
+│   ├── last-toolchain.txt           # Last tested toolchain tag (for change detection)
+│   └── badges/
+│       ├── all.json                 # shields.io endpoint — aggregate
+│       ├── toolchain.json           # shields.io endpoint — toolchain version
+│       ├── mainline.json            # shields.io endpoint — per-track
+│       ├── stable.json
+│       ├── lts-6.18.json
+│       ├── lts-6.12.json
+│       ├── lts-6.6.json
+│       ├── lts-6.1.json
+│       └── lts-5.15.json
+└── .github/workflows/
+    ├── check-toolchain.yml          # Cron poller + dispatch trigger
+    └── build-matrix.yml             # Full build matrix + status updater
+```
+
+---
+
+## Badge Integration
+
+Per-track shields.io endpoints can be embedded anywhere:
+
+```markdown
+![mainline](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/mainline.json&style=flat-square)
+![stable](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/stable.json&style=flat-square)
+![6.18 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.18.json&style=flat-square)
+![6.12 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.12.json&style=flat-square)
+![6.6 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.6.json&style=flat-square)
+![6.1 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-6.1.json&style=flat-square)
+![5.15 LTS](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Neutron-Projects/linux-kernel-build-tester/main/state/badges/lts-5.15.json&style=flat-square)
+```
+
+---
+
+<div align="center">
+<sub>
+Builds run inside <a href="https://github.com/Neutron-Projects/docker-image"><code>ghcr.io/neutron-projects/docker-image:arch-neutron</code></a> ·
+Toolchain managed by <a href="https://github.com/Neutron-Toolchains/antman">antman</a> ·
+Kernel versions from <a href="https://www.kernel.org/releases.json">kernel.org/releases.json</a>
+</sub>
+</div>
+<div align="center">
+
 # 🔨 linux-kernel-build-tester
 
 **Automated Linux kernel build matrix for [Neutron Clang](https://github.com/Neutron-Toolchains/clang-build-catalogue)**

@@ -24,18 +24,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# ─── Build matrix definition ───────────────────────────────────────────────────
+from kernel_releases import ARCHES, channel_sort_key, fetch_releases, resolve_tracks
 
-KERNEL_CHANNELS = [
-    {"channel": "mainline",  "label": "Mainline",  "series": "mainline", "lts": False},
-    {"channel": "lts-6.18",  "label": "6.18 LTS",  "series": "6.18",    "lts": True},
-    {"channel": "lts-6.12",  "label": "6.12 LTS",  "series": "6.12",    "lts": True},
-    {"channel": "lts-6.6",   "label": "6.6 LTS",   "series": "6.6",     "lts": True},
-    {"channel": "lts-6.1",   "label": "6.1 LTS",   "series": "6.1",     "lts": True},
-    {"channel": "lts-5.15",  "label": "5.15 LTS",  "series": "5.15",    "lts": True},
-]
-
-ARCH_ORDER = ["arm64", "arm", "x86_64"]
+ARCH_ORDER = [arch["label"] for arch in ARCHES]
 
 BADGE_COLORS = {
     "pass":    "brightgreen",
@@ -92,11 +83,44 @@ def load_existing_status() -> dict:
     if p.exists():
         with open(p) as f:
             return json.load(f)
-    return {"builds": {}, "toolchain": {}, "history": []}
+    return {"builds": {}, "toolchain": {}, "history": [], "track_order": [], "track_meta": {}}
 
 
-def build_new_status(existing: dict, results: dict, args) -> dict:
+def load_live_tracks() -> list[dict]:
+    try:
+        return resolve_tracks(fetch_releases())['tracks']
+    except Exception as exc:
+        print(f"warning: failed to resolve live kernel tracks: {exc}", file=sys.stderr)
+        return []
+
+
+def get_track_order(status: dict) -> list[str]:
+    order = status.get("track_order", [])
+    if order:
+        return order
+    builds = status.get("builds", {})
+    channels = sorted({key.split("/")[0] for key in builds}, key=channel_sort_key)
+    return channels
+
+
+def get_track_meta(status: dict) -> dict:
+    return status.get("track_meta", {})
+
+
+def build_new_status(existing: dict, results: dict, args, tracks: list[dict]) -> dict:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    track_order = [track["channel"] for track in tracks]
+    track_meta = {
+        track["channel"]: {
+            "label": track["label"],
+            "series": track["series"],
+            "kind": track["kind"],
+            "version": track["version"],
+            "kernel_head_commit": track.get("kernel_head_commit", ""),
+        }
+        for track in tracks
+    }
 
     status = {
         "last_updated": now,
@@ -110,6 +134,8 @@ def build_new_status(existing: dict, results: dict, args) -> dict:
         },
         "builds": dict(existing.get("builds", {})),
         "history": list(existing.get("history", [])),
+        "track_order": track_order,
+        "track_meta": track_meta,
     }
 
     for (channel, arch), result in results.items():
@@ -125,6 +151,7 @@ def build_new_status(existing: dict, results: dict, args) -> dict:
             "errors":         result.get("errors", 0),
             "clang_version":  result.get("clang_version", args.clang_version),
             "toolchain_tag":  result.get("toolchain_tag", args.toolchain_tag),
+            "kernel_head_commit": result.get("kernel_head_commit", ""),
             "timestamp":      result.get("timestamp_end", now),
             "run_url":        result.get("run_url", args.run_url),
         }
@@ -137,9 +164,9 @@ def build_new_status(existing: dict, results: dict, args) -> dict:
         "run_url":       args.run_url,
         "timestamp":     now,
         "results":       {
-            f"{ch}/{ar}": results.get((ch, ar), {}).get("status", "unknown")
-            for ch_def in KERNEL_CHANNELS for ch in [ch_def["channel"]]
-            for ar in ARCH_ORDER
+            f"{track['channel']}/{arch}": results.get((track["channel"], arch), {}).get("status", "unknown")
+            for track in tracks
+            for arch in ARCH_ORDER
         }
     }
     status["history"] = ([run_summary] + status["history"])[:50]
@@ -185,20 +212,21 @@ def generate_badge(label: str, message: str, color: str) -> dict:
 def write_badges(status: dict):
     Path("state/badges").mkdir(parents=True, exist_ok=True)
     builds = status.get("builds", {})
+    track_meta = get_track_meta(status)
+    track_order = get_track_order(status)
 
-    for kdef in KERNEL_CHANNELS:
-        channel = kdef["channel"]
-        label   = kdef["label"]
+    for channel in track_order:
+        label = track_meta.get(channel, {}).get("label", channel)
 
         overall = channel_overall_status(builds, channel)
 
-        # Determine message: show version if known
-        version_str = ""
-        for arch in ARCH_ORDER:
-            v = builds.get(f"{channel}/{arch}", {}).get("kernel_version", "")
-            if v:
-                version_str = v
-                break
+        version_str = track_meta.get(channel, {}).get("version", "")
+        if not version_str:
+            for arch in ARCH_ORDER:
+                v = builds.get(f"{channel}/{arch}", {}).get("kernel_version", "")
+                if v:
+                    version_str = v
+                    break
 
         if overall == "pass":
             msg = f"{version_str} ✓" if version_str else "passing"
@@ -215,7 +243,7 @@ def write_badges(status: dict):
             json.dump(badge_data, f, indent=2)
 
     # Aggregate "all" badge
-    all_statuses = [channel_overall_status(builds, k["channel"]) for k in KERNEL_CHANNELS]
+    all_statuses = [channel_overall_status(builds, channel) for channel in track_order]
     known_all = [s for s in all_statuses if s != "unknown"]
     if not known_all:
         agg = "unknown"
@@ -272,13 +300,14 @@ def generate_table(status: dict) -> str:
     tc       = status.get("toolchain", {})
     run_url  = status.get("last_run_url", "")
     updated  = status.get("last_updated", "")
+    track_meta = get_track_meta(status)
+    track_order = get_track_order(status)
 
     lines = []
 
     # ── Toolchain info bar ──
     tc_tag    = tc.get("tag", "—")
     clang_ver = tc.get("clang_version", "")
-    llvm_link = tc.get("llvm_commit", "")
     cat_url   = f"https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/tag/{tc_tag}"
 
     if clang_ver:
@@ -301,11 +330,10 @@ def generate_table(status: dict) -> str:
     lines.append("| Kernel | Version | `arm64` | `arm` | `x86_64` |")
     lines.append("|:-------|:--------|:-------:|:-----:|:--------:|")
 
-    for kdef in KERNEL_CHANNELS:
-        channel = kdef["channel"]
-        label   = kdef["label"]
+    for channel in track_order:
+        label = track_meta.get(channel, {}).get("label", channel)
 
-        version_str = ""
+        version_str = track_meta.get(channel, {}).get("version", "")
         cells = []
         for arch in ARCH_ORDER:
             key   = f"{channel}/{arch}"
@@ -354,8 +382,10 @@ def main():
     results = load_results(args.results_dir)
     print(f"Loaded {len(results)} build result(s)\n")
 
+    tracks = load_live_tracks()
+
     existing = load_existing_status()
-    status   = build_new_status(existing, results, args)
+    status   = build_new_status(existing, results, args, tracks)
 
     save_status(status)
     write_badges(status)

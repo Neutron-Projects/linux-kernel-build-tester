@@ -21,6 +21,7 @@
 #   status             "pass" | "fail"
 #   arch               normalised arch string
 #   kernel_version     from include/config/kernel.release
+#   kernel_head_commit  from $KERNEL_HEAD_COMMIT env (optional)
 #   clang_version      from clang --version
 #   toolchain_tag      from $TOOLCHAIN_TAG env (optional)
 #   duration_seconds   integer
@@ -120,6 +121,7 @@ emit_result() {
   "status": "${status}",
   "arch": "${ARCH_NORM}",
   "kernel_version": "${kernel_version}",
+    "kernel_head_commit": "${KERNEL_HEAD_COMMIT:-}",
   "clang_version": "${clang_version}",
   "toolchain_tag": "${TOOLCHAIN_TAG:-}",
   "duration_seconds": ${duration},
@@ -161,6 +163,7 @@ log "  kernel dir: ${KERNEL_DIR}"
 log "  toolchain:  ${TC_PATH}"
 log "  jobs:       ${JOBS}"
 log "  log:        ${BUILD_LOG}"
+[[ -n "${KERNEL_HEAD_COMMIT:-}" ]] && log "  mainline:   ${KERNEL_HEAD_COMMIT}"
 [[ -n "${TOOLCHAIN_TAG:-}" ]] && log "  tc tag:     ${TOOLCHAIN_TAG}"
 hr
 

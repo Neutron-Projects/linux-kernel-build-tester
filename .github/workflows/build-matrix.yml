@@ -43,9 +43,8 @@ on:
         type: string
         default: ""
       kernel_filter:
-        description: "Limit to one kernel channel (all = full matrix)"
-        type: choice
-        options: [all, mainline, lts-6.18, lts-6.12, lts-6.6, lts-6.1, lts-5.15]
+        description: "Limit to one kernel channel, series, or label (all = full matrix)"
+        type: string
         default: all
       arch_filter:
         description: "Limit to one architecture (all = arm64 + arm + x86_64)"
@@ -216,6 +215,7 @@ jobs:
         env:
           TOOLCHAIN_TAG: ${{ needs.setup.outputs.toolchain_tag }}
           BUILD_ARCH:    ${{ matrix.arch }}
+          KERNEL_HEAD_COMMIT: ${{ matrix.kernel_head_commit }}
         run: |
           RESULTS="$HOME/results"
           mkdir -p "${RESULTS}"

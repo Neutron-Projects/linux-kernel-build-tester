@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""
-print-summary.py  —  Prints the build matrix table to stdout and GITHUB_STEP_SUMMARY.
-"""
-import json, os
+"""Print the build matrix table to stdout and GITHUB_STEP_SUMMARY."""
+
+import json
+import os
 from pathlib import Path
+
+from kernel_releases import channel_sort_key
 
 sf = Path("state/build-status.json")
 if not sf.exists():
@@ -12,24 +14,20 @@ if not sf.exists():
 status = json.loads(sf.read_text())
 builds = status.get("builds", {})
 tc     = status.get("toolchain", {})
+track_order = status.get("track_order", [])
+track_meta  = status.get("track_meta", {})
 
-KERNELS = ["mainline","lts-6.18","lts-6.12","lts-6.6","lts-6.1","lts-5.15"]
 ARCHES  = ["arm64","arm","x86_64"]
-LABELS  = {
-    "mainline":  "Mainline",
-    "lts-6.18":  "6.18 LTS",
-    "lts-6.12":  "6.12 LTS",
-    "lts-6.6":   "6.6 LTS",
-    "lts-6.1":   "6.1 LTS",
-    "lts-5.15":  "5.15 LTS",
-}
 EMOJI = {"pass": "✅", "fail": "❌", "unknown": "⬜"}
+
+if not track_order:
+    track_order = sorted({key.split("/")[0] for key in builds}, key=channel_sort_key)
 
 rows = []
 total_p = total_f = 0
-for k in KERNELS:
+for k in track_order:
     cells = []
-    ver = ""
+    ver = track_meta.get(k, {}).get("version", "")
     for a in ARCHES:
         b = builds.get(f"{k}/{a}", {})
         if not ver:
@@ -41,7 +39,7 @@ for k in KERNELS:
             total_f += 1
         dur = f" `{b['duration']}`" if s == "pass" and b.get("duration") else ""
         cells.append(EMOJI.get(s, "⬜") + dur)
-    rows.append(f"| **{LABELS[k]}** | `{ver or '?'}` | {' | '.join(cells)} |")
+    rows.append(f"| **{track_meta.get(k, {}).get('label', k)}** | `{ver or '?'}` | {' | '.join(cells)} |")
 
 header = f"Neutron Clang {tc.get('clang_version','?')} ({tc.get('tag','?')})"
 print(f"\n{header}")
